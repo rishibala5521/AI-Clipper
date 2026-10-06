@@ -3,10 +3,12 @@ import logging
 from flask import Flask, jsonify
 
 from clip_analyzer import AnalysisSettings
+from clip_ranker import RankingSettings
 from config import Config
 from errors import register_error_handlers
 from llm_client import GeminiClient
 from nvidia_client import NvidiaClient
+from repository import AnalysisRepository, resolve_db_path
 from routes import api_bp
 from transcript_service import YouTubeTranscriptProvider
 
@@ -49,6 +51,7 @@ def create_app(
     test_config: dict | None = None,
     transcript_provider=None,
     llm_client=None,
+    repository=None,
 ) -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -58,11 +61,15 @@ def create_app(
     configure_logging(app)
     register_error_handlers(app)
 
-    # Tests pass fakes so they never touch the network or spend credits.
+    # Tests pass fakes so they never touch the network, the AI or the real database.
     app.extensions["transcript_provider"] = transcript_provider or YouTubeTranscriptProvider()
     app.extensions["llm_client"] = llm_client or build_llm_client(app.config)
+    app.extensions["repository"] = repository or AnalysisRepository(
+        resolve_db_path(app.config["DATABASE_URL"])
+    )
     # Bad settings fail here, at startup, with a clear message.
     app.extensions["analysis_settings"] = AnalysisSettings.from_config(app.config)
+    app.extensions["ranking_settings"] = RankingSettings.from_config(app.config)
 
     app.register_blueprint(api_bp)
 

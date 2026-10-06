@@ -40,8 +40,7 @@ def _get_float(name: str, default: float) -> float:
 class Config:
     APP_ENV = os.getenv("APP_ENV", "development")
     DEBUG = _get_bool("FLASK_DEBUG", False)
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///clip_timeline.db")
-
+    DATABASE_URL = os.getenv("CLIP_DATABASE_URL", "sqlite:///clip_timeline.db")
     # Reject oversized request bodies (1 MB) before they reach our code.
     MAX_CONTENT_LENGTH = 1_000_000
 
@@ -59,8 +58,8 @@ class Config:
     NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "").strip()
     NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip()
     NVIDIA_JSON_MODE = os.getenv("NVIDIA_JSON_MODE", "prompt_only").strip().lower()
-    NVIDIA_MAX_OUTPUT_TOKENS = _get_int("NVIDIA_MAX_OUTPUT_TOKENS", 4000)
     NVIDIA_THINKING = os.getenv("NVIDIA_THINKING", "off").strip().lower()
+    NVIDIA_MAX_OUTPUT_TOKENS = _get_int("NVIDIA_MAX_OUTPUT_TOKENS", 4000)
 
     # Gemini (kept as an alternative)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
@@ -73,3 +72,16 @@ class Config:
     MIN_CLIP_SECONDS = _get_int("MIN_CLIP_SECONDS", 15)
     MAX_CLIP_SECONDS = _get_int("MAX_CLIP_SECONDS", 60)
     MAX_CHUNKS_PER_ANALYSIS = _get_int("MAX_CHUNKS_PER_ANALYSIS", 10)
+
+    # Scoring: overall = 20 * (hook*w1 + value*w2 + clarity*w3 + completeness*w4)
+    SCORE_WEIGHT_HOOK = _get_float("SCORE_WEIGHT_HOOK", 0.30)
+    SCORE_WEIGHT_VALUE = _get_float("SCORE_WEIGHT_VALUE", 0.30)
+    SCORE_WEIGHT_CLARITY = _get_float("SCORE_WEIGHT_CLARITY", 0.20)
+    SCORE_WEIGHT_COMPLETENESS = _get_float("SCORE_WEIGHT_COMPLETENESS", 0.20)
+
+    # Two clips overlapping by at least this share of the shorter one count as duplicates.
+    DEDUP_OVERLAP_RATIO = _get_float("DEDUP_OVERLAP_RATIO", 0.5)
+
+    # Limits for clips edited by the user (seconds).
+    MIN_EDIT_CLIP_SECONDS = _get_float("MIN_EDIT_CLIP_SECONDS", 1.0)
+    MAX_EDIT_CLIP_SECONDS = _get_float("MAX_EDIT_CLIP_SECONDS", 180.0)
